@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inner Circle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #FFD21F;
+      color: #000;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .page { display: none; min-height: 100vh; padding: 20px; text-align: center; }
+    .page.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+    .logo {
+      max-width: 90vw; max-height: 40vh; width: auto; height: auto;
+      cursor: pointer; transition: transform 0.2s; margin-bottom: 20px;
+    }
+    .logo:hover { transform: scale(1.05); }
+    .guidance { font-size: 14px; text-transform: lowercase; margin-bottom: 30px; opacity: 0.8; }
+    .description {
+      max-width: 90vw; line-height: 1.5; font-size: 16px; margin-bottom: 20px;
+      font-weight: 300;
+    }
+    .hashtag { font-size: 12px; opacity: 0.6; letter-spacing: 2px; }
+
+    .header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 20px;
+      background: rgba(255,210,31,0.92);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    .counter { font-size: 14px; font-weight: 700; }
+    .menu-btn { font-size: 24px; cursor: pointer; padding: 10px; }
+
+    .events-wrap { width: 100%; max-width: 560px; }
+    .events-list { list-style: none; width: 100%; margin-top: 20px; }
+
+    .event {
+      background: rgba(255,255,255,0.22);
+      margin: 15px 0;
+      padding: 22px;
+      border-radius: 16px;
+      text-align: left;
+    }
+    .event-header { font-size: 20px; font-weight: 650; margin-bottom: 6px; }
+    .event-time { font-size: 15px; opacity: 0.85; margin-bottom: 10px; }
+
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(0,0,0,0.08);
+      opacity: 0.95;
+    }
+
+    .desc-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.18);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 10px 0 14px 0;
+    }
+    .desc-table th, .desc-table td {
+      padding: 10px 12px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      vertical-align: top;
+    }
+    .desc-table th {
+      width: 130px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 11px;
+      opacity: 0.75;
+      text-align: left;
+    }
+    .desc-table tr:last-child th,
+    .desc-table tr:last-child td { border-bottom: none; }
+
+    .rsvp-btn {
+      background: #000; color: #FFD21F; border: none; padding: 14px 18px;
+      border-radius: 999px; font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; transition: background 0.2s;
+    }
+    .rsvp-btn:hover { background: #333; }
+    .rsvp-btn:disabled { background: #c9c9c9; cursor: not-allowed; color: #666; }
+
+    .subtext { font-size: 13px; opacity: 0.75; margin-top: 10px; }
+    .message {
+      color: #000;
+      background: rgba(255,255,255,0.6);
+      padding: 18px;
+      border-radius: 12px;
+      margin: 18px 0 0 0;
+      max-width: 560px;
+    }
+
+    /* RSVP modal */
+    .modal {
+      position: fixed; inset: 0;
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 300;
+      background: rgba(0,0,0,0.75);
+      padding: 18px;
+    }
+    .modal.active { display: flex; }
+    .modal-card {
+      width: 95vw; max-width: 440px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 18px;
+      padding: 18px;
+      color: #fff;
+      backdrop-filter: blur(10px);
+    }
+    .modal-card h2 { font-size: 18px; margin-bottom: 6px; }
+    .modal-card p { font-size: 13px; opacity: 0.92; margin-bottom: 10px; line-height: 1.4; }
+    .modal-card input {
+      width: 100%; padding: 14px; margin: 8px 0;
+      border: none; border-radius: 10px; font-size: 16px;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .modal-actions button { flex: 1; padding: 12px; border-radius: 12px; border: none; cursor: pointer; font-weight: 700; }
+    .secondary { background: rgba(255,255,255,0.22); color: #fff; }
+    .primary { background: #000; color: #FFD21F; }
+    .error {
+      display:none; margin-top: 8px;
+      color: #ffd21f; font-size: 13px; opacity: 0.95;
+    }
+
+    /* Admin */
+    .admin-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      display: none;
+      z-index: 400;
+      padding: 18px;
+      align-items: center;
+      justify-content: center;
+    }
+    .admin-overlay.active { display: flex; }
+
+    .admin-form {
+      width: 96vw; max-width: 820px;
+      max-height: 88vh; overflow: auto;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .admin-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .admin-top input, .admin-top button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .admin-panel { display:none; }
+
+    .admin-section {
+      margin: 14px 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .admin-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    .admin-section input, .admin-section textarea, .admin-section button, .admin-section select {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    .admin-section textarea { min-height: 90px; resize: vertical; }
+
+    .admin-muted { opacity: 0.8; font-size: 13px; line-height: 1.4; }
+    .danger { background: #ff6b6b; color: #111; font-weight: 800; cursor: pointer; }
+    .darkbtn { background:#000; color:#FFD21F; font-weight: 800; cursor: pointer; }
+    .ghost { background: rgba(255,255,255,0.16); color: #fff; font-weight: 800; cursor: pointer; }
+
+    .admin-event {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+    }
+    .admin-event h3 { margin-bottom: 8px; font-size: 16px; }
+
+    .att-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .att-table th, .att-table td {
+      padding: 10px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      vertical-align: top;
+    }
+    .att-table th { text-align: left; opacity: 0.92; }
+    .att-table tr:last-child td, .att-table tr:last-child th { border-bottom: none; }
+
+    @media (max-width: 520px) {
+      .admin-top { grid-template-columns: 1fr; }
+      .admin-grid-2, .admin-grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="menu-btn" onclick="toggleAdmin()">☰</div>
+    <div class="counter" id="globalCounter">Total Participants: 0</div>
+  </div>
+
+  <div id="page1" class="page active">
+    <img src="logo.png" alt="Inner Circle" class="logo" onclick="goToEvents()" />
+    <div class="guidance">click to be part of the change</div>
+    <div class="description">
+      In a world where loneliness affects so many, Inner Circle fosters genuine human connections and a true sense of belonging through thoughtful events.
+      Event locations are announced on Instagram 48 hours before the event.
+      Reserve your spot now.
+    </div>
+    <div class="hashtag">#togetherwecan</div>
+  </div>
+
+  <div id="page2" class="page">
+    <div class="events-wrap" style="margin-top: 70px;">
+      <h1 style="font-size: 28px; margin-bottom: 8px;">Upcoming Events</h1>
+      <div class="admin-muted" style="color: rgba(0,0,0,0.65); margin-bottom: 14px;">
+        Tap an event to RSVP. If you’re bringing friends, add them in your RSVP.
+      </div>
+
+      <ul id="eventsList" class="events-list"></ul>
+
+      <div id="message"></div>
+    </div>
+  </div>
+
+  <!-- RSVP Modal -->
+  <div id="rsvpModal" class="modal" onclick="closeRsvpModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h2 id="rsvpTitle">RSVP</h2>
+      <p>Instagram is optional. If you bring someone, include it below — it counts toward Total Participants.</p>
+
+      <input type="text" id="rsvpName" placeholder="Your name (required)" />
+      <input type="text" id="rsvpInstagram" placeholder="Instagram handle (optional)" />
+      <input type="number" id="rsvpGuests" min="0" value="0" placeholder="Bringing anyone? (0, 1, 2...)" />
+
+      <div id="rsvpError" class="error"></div>
+
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeRsvpModal()">Cancel</button>
+        <button class="primary" onclick="submitRsvp()">Confirm RSVP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin -->
+  <div id="adminOverlay" class="admin-overlay">
+    <div class="admin-form">
+      <div class="admin-top">
+        <input type="password" id="adminPass" placeholder="Enter admin password" onkeypress="handleAdminKey(event)" />
+        <div style="display:flex; gap:10px;">
+          <button class="darkbtn" onclick="checkAdmin()">Enter Admin</button>
+          <button class="ghost" onclick="closeAdminOverlay()">Exit</button>
+        </div>
+      </div>
+
+      <div id="adminPanel" class="admin-panel">
+        <div class="admin-section">
+          <h3 style="margin-bottom: 6px;">Total Participants Control</h3>
+          <div class="admin-muted">
+            Total Participants is normally calculated from all RSVPs (including guests).
+            If you want to manually adjust the number (increase/decrease), use the offset below.
+          </div>
+
+          <div class="admin-grid-3" style="margin-top:10px;">
+            <button class="ghost" onclick="adjustParticipants(-1)">– 1</button>
+            <button class="ghost" onclick="adjustParticipants(+1)">+ 1</button>
+            <button class="danger" onclick="resetParticipantsOffset()">Reset Offset</button>
+          </div>
+
+          <div class="admin-grid-2">
+            <input type="number" id="participantsSetInput" placeholder="Set Total Participants to..." />
+            <button class="darkbtn" onclick="setTotalParticipants()">Set Total Participants</button>
+          </div>
+
+          <div class="admin-muted" id="participantsMeta"></div>
+        </div>
+
+        <div class="admin-section">
+          <h3 style="margin-bottom: 6px;">Add Event</h3>
+          <div class="admin-grid-2">
+            <input type="text" id="eventName" placeholder="Event name" />
+            <input type="datetime-local" id="eventDateTime" />
+          </div>
+          <textarea id="eventDesc" placeholder="Event description (this shows on the event card)"></textarea>
+          <input type="number" id="maxRes" placeholder="Max headcount (optional, 0 = unlimited)" />
+          <button class="darkbtn" onclick="addEvent()">Add Event</button>
+          <div class="admin-muted">Max headcount limits total people (including guests).</div>
+        </div>
+
+        <div class="admin-section">
+          <h3 style="margin-bottom: 6px;">Admin Tools</h3>
+          <div class="admin-grid-2">
+            <button class="danger" onclick="resetAllRsvps()">Reset RSVPs (clears all attendees)</button>
+            <button class="ghost" onclick="recalcAllCounts()">Recalculate counts from attendees</button>
+          </div>
+          <div class="admin-muted">
+            Reset RSVPs clears names/instagram/guests for all events (stored only on this device/browser).
+          </div>
+        </div>
+
+        <div id="eventsAdmin"></div>
+
+        <button class="danger" onclick="logoutAdmin()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Storage keys
+    // -----------------------------
+    const STORAGE_EVENTS = 'events';
+    const STORAGE_PARTICIPANTS_OFFSET = 'participantsOffset';
+
+    // -----------------------------
+    // Data
+    // -----------------------------
+    let events = JSON.parse(localStorage.getItem(STORAGE_EVENTS)) || [
+      {
+        id: 1,
+        name: 'Connection Night',
+        datetime: '2026-02-10T19:00',
+        description: 'A night to meet new people and spark real connections.',
+        reservations: 0,
+        max: 0,
+        active: true,
+        attendees: []
+      },
+      {
+        id: 2,
+        name: 'Belonging Workshop',
+        datetime: '2026-02-15T18:00',
+        description: 'A guided workshop on belonging, friendship, and community.',
+        reservations: 0,
+        max: 0,
+        active: true,
+        attendees: []
+      }
+    ];
+
+    // Backfill for older storage
+    events = events.map(e => ({
+      description: '',
+      attendees: [],
+      ...e,
+      description: e.description ?? '',
+      attendees: Array.isArray(e.attendees) ? e.attendees : []
+    })).map(e => ({
+      ...e,
+      attendees: (e.attendees || []).map(a => ({
+        name: a.name || '',
+        instagram: a.instagram || a.email || '', // migration support
+        guests: parseInt(a.guests, 10) || 0,
+        ip: a.ip || 'unknown',
+        ts: a.ts || new Date().toISOString()
+      }))
+    }));
+
+    let participantsOffset = parseInt(localStorage.getItem(STORAGE_PARTICIPANTS_OFFSET), 10);
+    if (Number.isNaN(participantsOffset)) participantsOffset = 0;
+
+    let showMessage = '';
+    let currentRsvpEventId = null;
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function normalizeInstagram(handle) {
+      let h = (handle || '').trim();
+      if (!h) return '';
+      if (h.startsWith('@')) h = h.slice(1);
+      h = h.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+      h = h.split('/')[0];
+      return h.trim().toLowerCase();
+    }
+
+    async function getClientIP() {
+      // Best-effort: helps reduce double RSVPs (not perfect because VPNs exist)
+      try {
+        const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+        const data = await res.json();
+        return data && data.ip ? data.ip : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // -----------------------------
+    // Saving + Global Count
+    // -----------------------------
+    function calcBaseParticipants() {
+      // total headcount across events (including guests)
+      return events.reduce((sum, e) => sum + (parseInt(e.reservations, 10) || 0), 0);
+    }
+
+    function totalParticipants() {
+      const base = calcBaseParticipants();
+      return Math.max(0, base + (participantsOffset || 0));
+    }
+
+    function updateGlobalCounter() {
+      document.getElementById('globalCounter').textContent = `Total Participants: ${totalParticipants()}`;
+      const meta = document.getElementById('participantsMeta');
+      if (meta) {
+        meta.innerHTML = `Base from RSVPs: <b>${calcBaseParticipants()}</b> • Offset: <b>${participantsOffset}</b> • Shown total: <b>${totalParticipants()}</b>`;
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_EVENTS, JSON.stringify(events));
+      localStorage.setItem(STORAGE_PARTICIPANTS_OFFSET, String(participantsOffset || 0));
+      updateGlobalCounter();
+    }
+
+    // -----------------------------
+    // Navigation
+    // -----------------------------
+    function goToEvents() {
+      document.getElementById('page1').classList.remove('active');
+      document.getElementById('page2').classList.add('active');
+      renderEvents();
+    }
+
+    // -----------------------------
+    // Events UI
+    // -----------------------------
+    function renderEvents() {
+      const now = new Date();
+      const list = document.getElementById('eventsList');
+      list.innerHTML = '';
+
+      const upcoming = events
+        .filter(e => {
+          const eventTime = new Date(e.datetime);
+          return e.active && (eventTime > new Date(now.getTime() + 9 * 60 * 60 * 1000));
+        })
+        .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+      upcoming.forEach(e => {
+        const maxReached = (e.max > 0 && (e.reservations >= e.max));
+        const spotsLeft = (e.max > 0) ? Math.max(0, e.max - e.reservations) : null;
+
+        const li = document.createElement('li');
+        li.className = 'event';
+
+        li.innerHTML = `
+          <div class="event-header">${escapeHtml(e.name)}</div>
+          <div class="event-time">${new Date(e.datetime).toLocaleString('de-DE')}</div>
+
+          <div class="pill-row">
+            <span class="pill">${e.reservations} going</span>
+            ${e.max > 0 ? `<span class="pill">${spotsLeft} spots left</span>` : `<span class="pill">Unlimited spots</span>`}
+          </div>
+
+          <table class="desc-table">
+            <tr>
+              <th>Description</th>
+              <td>${e.description ? escapeHtml(e.description) : '<span style="opacity:0.7;">No description yet.</span>'}</td>
+            </tr>
+          </table>
+
+          <button class="rsvp-btn" onclick="openRsvpModal(${e.id})" ${maxReached ? 'disabled' : ''}>
+            ${maxReached ? 'Event Full' : `RSVP (${e.reservations}${e.max ? '/' + e.max : ''})`}
+          </button>
+
+          <div class="subtext">Guests count too — please RSVP honestly so we can plan the best experience.</div>
+        `;
+        list.appendChild(li);
+      });
+
+      if (list.children.length === 0) {
+        list.innerHTML = '<div style="opacity:0.7; margin-top:20px;">No upcoming events</div>';
+      }
+
+      document.getElementById('message').innerHTML = showMessage;
+      showMessage = '';
+      updateGlobalCounter();
+    }
+
+    // -----------------------------
+    // RSVP Modal
+    // -----------------------------
+    function openRsvpModal(eventId) {
+      const ev = events.find(e => e.id === eventId);
+      if (!ev) return;
+      if (ev.max > 0 && ev.reservations >= ev.max) return;
+
+      currentRsvpEventId = eventId;
+      document.getElementById('rsvpTitle').textContent = `RSVP — ${ev.name}`;
+      document.getElementById('rsvpName').value = '';
+      document.getElementById('rsvpInstagram').value = '';
+      document.getElementById('rsvpGuests').value = 0;
+      hideRsvpError();
+
+      document.getElementById('rsvpModal').classList.add('active');
+    }
+
+    function closeRsvpModal(e) {
+      if (e && e.target && e.target.id !== 'rsvpModal') return;
+      document.getElementById('rsvpModal').classList.remove('active');
+      currentRsvpEventId = null;
+    }
+
+    function showRsvpError(msg) {
+      const el = document.getElementById('rsvpError');
+      el.style.display = 'block';
+      el.textContent = msg;
+    }
+    function hideRsvpError() {
+      const el = document.getElementById('rsvpError');
+      el.style.display = 'none';
+      el.textContent = '';
+    }
+
+    async function submitRsvp() {
+      hideRsvpError();
+
+      const ev = events.find(e => e.id === currentRsvpEventId);
+      if (!ev) return;
+
+      const name = (document.getElementById('rsvpName').value || '').trim();
+      const instagram = normalizeInstagram(document.getElementById('rsvpInstagram').value || ''); // OPTIONAL
+      const guests = Math.max(0, parseInt(document.getElementById('rsvpGuests').value, 10) || 0);
+
+      if (!name) return showRsvpError('Please enter your name.');
+
+      const headcount = 1 + guests;
+
+      // capacity check (headcount)
+      if (ev.max > 0 && (ev.reservations + headcount) > ev.max) {
+        return showRsvpError(`Not enough spots left. Remaining: ${Math.max(0, ev.max - ev.reservations)}`);
+      }
+
+      // best-effort IP check (for duplicate prevention)
+      const ip = await getClientIP();
+      const safeIp = ip || 'unknown';
+
+      // duplicate prevention:
+      // - if instagram provided: prevent same instagram twice for same event
+      // - otherwise: prevent same IP + same name twice for same event (best we can do without accounts)
+      const attendees = ev.attendees || [];
+
+      if (instagram) {
+        const dupIG = attendees.some(a => (a.instagram || '').toLowerCase() === instagram);
+        if (dupIG) return showRsvpError('You already registered for this event with that Instagram handle.');
+      } else if (ip) {
+        const dupIpName = attendees.some(a => (a.ip === ip) && ((a.name || '').trim().toLowerCase() === name.toLowerCase()));
+        if (dupIpName) return showRsvpError('It looks like you already registered for this event.');
+      }
+
+      ev.attendees.push({
+        name,
+        instagram, // may be empty string
+        guests,
+        ip: safeIp,
+        ts: new Date().toISOString()
+      });
+
+      ev.reservations = (parseInt(ev.reservations, 10) || 0) + headcount;
+
+      saveData();
+
+      showMessage = `
+        <div class="message">
+          Thank you for joining and please make sure you are on time as games and other events will start 40mins from the event start time.
+        </div>
+      `;
+
+      closeRsvpModal();
+      renderEvents();
+      if (document.getElementById('adminPanel').style.display === 'block') renderAdminEvents();
+    }
+
+    // -----------------------------
+    // Admin Overlay
+    // -----------------------------
+    function toggleAdmin() {
+      const overlay = document.getElementById('adminOverlay');
+      overlay.classList.toggle('active');
+      if (!overlay.classList.contains('active')) logoutAdmin();
+    }
+
+    function closeAdminOverlay() {
+      document.getElementById('adminOverlay').classList.remove('active');
+      logoutAdmin();
+    }
+
+    function handleAdminKey(e) {
+      if (e.key === 'Enter') checkAdmin();
+      if (e.key === 'Escape') closeAdminOverlay();
+    }
+
+    function checkAdmin() {
+      if (document.getElementById('adminPass').value === 'innercircle2026') {
+        document.getElementById('adminPanel').style.display = 'block';
+        renderAdminEvents();
+        updateGlobalCounter();
+      }
+    }
+
+    function logoutAdmin() {
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('adminPass').value = '';
+    }
+
+    // Participants controls
+    function adjustParticipants(delta) {
+      participantsOffset = (participantsOffset || 0) + (parseInt(delta, 10) || 0);
+      saveData();
+      renderEvents();
+      renderAdminEvents();
+    }
+
+    function resetParticipantsOffset() {
+      participantsOffset = 0;
+      saveData();
+      renderEvents();
+      renderAdminEvents();
+    }
+
+    function setTotalParticipants() {
+      const desired = parseInt(document.getElementById('participantsSetInput').value, 10);
+      if (Number.isNaN(desired) || desired < 0) return;
+
+      const base = calcBaseParticipants();
+      participantsOffset = desired - base;
+
+      document.getElementById('participantsSetInput').value = '';
+      saveData();
+      renderEvents();
+      renderAdminEvents();
+    }
+
+    // -----------------------------
+    // Admin: Events management
+    // -----------------------------
+    function renderAdminEvents() {
+      const container = document.getElementById('eventsAdmin');
+      container.innerHTML = '';
+
+      const sorted = events.slice().sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+
+      sorted.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'admin-event';
+
+        const attRows = (e.attendees || []).map(a => `
+          <tr>
+            <td>${escapeHtml(a.name || '')}</td>
+            <td>${a.instagram ? '@' + escapeHtml(a.instagram) : '<span style="opacity:0.7;">(none)</span>'}</td>
+            <td>${parseInt(a.guests, 10) || 0}</td>
+            <td style="word-break:break-all;">${escapeHtml(a.ip || 'unknown')}</td>
+          </tr>
+        `).join('');
+
+        div.innerHTML = `
+          <h3>${escapeHtml(e.name)} <span class="admin-muted">(${new Date(e.datetime).toLocaleString('de-DE')})</span></h3>
+
+          <div class="admin-grid-3">
+            <label>
+              <div class="admin-muted">Active</div>
+              <select onchange="setActive(${e.id}, this.value)">
+                <option value="true" ${e.active ? 'selected' : ''}>Yes</option>
+                <option value="false" ${!e.active ? 'selected' : ''}>No</option>
+              </select>
+            </label>
+
+            <label>
+              <div class="admin-muted">Max headcount (0 = unlimited)</div>
+              <input type="number" value="${e.max || 0}" onchange="setMax(${e.id}, this.value)" />
+            </label>
+
+            <label>
+              <div class="admin-muted">Reserved headcount</div>
+              <input type="number" value="${e.reservations || 0}" onchange="setRes(${e.id}, this.value)" />
+            </label>
+          </div>
+
+          <label>
+            <div class="admin-muted">Event description</div>
+            <textarea onchange="setDesc(${e.id}, this.value)">${escapeHtml(e.description || '')}</textarea>
+          </label>
+
+          <div class="admin-grid-2">
+            <button class="ghost" onclick="clearAttendees(${e.id})">Clear attendees (this event)</button>
+            <button class="danger" onclick="deleteEvent(${e.id})">Delete event</button>
+          </div>
+
+          <div class="admin-muted" style="margin-top:10px;">
+            Attendees (Name / Instagram optional / Guests). Total registrations: ${(e.attendees || []).length}
+          </div>
+          <table class="att-table">
+            <thead><tr><th>Name</th><th>Instagram</th><th>Guests</th><th>IP</th></tr></thead>
+            <tbody>
+              ${attRows || `<tr><td colspan="4" class="admin-muted">No attendees yet.</td></tr>`}
+            </tbody>
+          </table>
+        `;
+
+        container.appendChild(div);
+      });
+
+      updateGlobalCounter();
+    }
+
+    function addEvent() {
+      const name = (document.getElementById('eventName').value || '').trim();
+      const dt = document.getElementById('eventDateTime').value;
+      const desc = (document.getElementById('eventDesc').value || '').trim();
+      const max = parseInt(document.getElementById('maxRes').value, 10) || 0;
+
+      if (!name || !dt) return;
+
+      events.push({
+        id: Date.now(),
+        name,
+        datetime: dt,
+        description: desc,
+        reservations: 0,
+        max,
+        active: true,
+        attendees: []
+      });
+
+      document.getElementById('eventName').value = '';
+      document.getElementById('eventDateTime').value = '';
+      document.getElementById('eventDesc').value = '';
+      document.getElementById('maxRes').value = '';
+
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function setActive(id, val) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.active = (val === 'true');
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function setMax(id, val) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.max = parseInt(val, 10) || 0;
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function setDesc(id, val) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.description = (val || '').trim();
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function setRes(id, val) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.reservations = Math.max(0, parseInt(val, 10) || 0);
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function clearAttendees(id) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.attendees = [];
+      e.reservations = 0;
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function deleteEvent(id) {
+      events = events.filter(e => e.id !== id);
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+    }
+
+    function resetAllRsvps() {
+      events = events.map(e => ({ ...e, reservations: 0, attendees: [] }));
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+      showMessage = '<div class="message">All RSVP data was cleared.</div>';
+    }
+
+    function recalcAllCounts() {
+      events = events.map(e => {
+        const headcount = (e.attendees || []).reduce((sum, a) => sum + 1 + (parseInt(a.guests, 10) || 0), 0);
+        return { ...e, reservations: headcount };
+      });
+      saveData();
+      renderAdminEvents();
+      renderEvents();
+      showMessage = '<div class="message">Counts recalculated from attendee lists.</div>';
+    }
+
+    // Auto-cleanup expired events every 30min
+    setInterval(() => {
+      const now = new Date();
+      events = events.filter(e => {
+        const eventTime = new Date(e.datetime);
+        return e.active && (eventTime > new Date(now.getTime() + 9 * 60 * 60 * 1000));
+      });
+      saveData();
+      renderEvents();
+      if (document.getElementById('adminPanel').style.display === 'block') renderAdminEvents();
+    }, 30 * 60 * 1000);
+
+    // Initial load
+    updateGlobalCounter();
+    renderEvents();
+
+    // Quality of life: ESC closes admin if open
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeRsvpModal();
+        closeAdminOverlay();
+      }
+    });
+  </function openConfirmModal(eventObj) {
+  const name = eventObj?.name ? eventObj.name : 'Your event';
+  const time = eventObj?.datetime ? new Date(eventObj.datetime).toLocaleString('de-DE') : '';
+  const line = time ? `<b>${escapeHtml(name)}</b><br>${escapeHtml(time)}` : `<b>${escapeHtml(name)}</b>`;
+  document.getElementById('confirmEventLine').innerHTML = line;
+
+  document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeConfirmModal(e) {
+  // allow clicking outside modal to close
+  if (e && e.target && e.target.id !== 'confirmModal') return;
+  document.getElementById('confirmModal').classList.remove('active');
+}
+>
+<<!-- RSVP Confirmation Screen -->
+<div id="confirmModal" class="modal" onclick="closeConfirmModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h2 style="margin-bottom:6px;">You're confirmed ✅</h2>
+
+    <p id="confirmEventLine" style="opacity:0.95; font-size:14px; line-height:1.4; margin-bottom:10px;"></p>
+
+    <div style="background: rgba(255,255,255,0.18); padding: 14px; border-radius: 12px; line-height: 1.5;">
+      <div style="font-weight:700; margin-bottom:6px;">Thank you for joining Inner Circle.</div>
+      <div style="opacity:0.95;">
+        Kindly be on time — games and other activities will already start and you don’t want to miss that!
+      </div>
+
+      <div style="margin-top:10px; opacity:0.98;">
+        <b>Donation-based event:</b> contribute what you can.<br />
+        <b>Bar info:</b> card payments from <b>10€</b>.
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="primary" onclick="closeConfirmModal()">Done</button>
+    </div>
+  </div>
+</div>
+>
+</html>
